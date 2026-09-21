@@ -1,0 +1,43 @@
+name: Tests
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  phpunit:
+    name: "PHPUnit / PHP ${{ matrix.php }} / Mautic ${{ matrix.mautic }}"
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - php: "8.2"
+            mautic: "^7.0"
+          - php: "8.3"
+            mautic: "^7.0"
+          - php: "8.4"
+            mautic: "^7.0"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: json, mbstring, intl
+          coverage: none
+
+      - name: Require Mautic ${{ matrix.mautic }}
+        run: composer require "mautic/core-lib:${{ matrix.mautic }}" --no-update --no-interaction
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Run PHPUnit
+        run: vendor/bin/phpunit --testdox

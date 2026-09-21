@@ -1,10 +1,12 @@
 {
-    "name": "tvalimaa/mautic-altcha-bundle",
+    "name": "druidfi/mautic-altcha-bundle",
     "description": "Self-hosted, privacy-friendly ALTCHA (proof-of-work CAPTCHA) integration for Mautic forms.",
     "type": "mautic-plugin",
     "license": "GPL-3.0-only",
+    "homepage": "https://github.com/druidfi/mautic-altcha-bundle",
     "authors": [{
-        "name": "Tuomas Välimaa"
+        "name": "Druid Oy",
+        "homepage": "https://github.com/druidfi"
     }],
     "keywords": [
         "mautic",
@@ -15,11 +17,28 @@
         "proof-of-work",
         "spam-protection"
     ],
+    "support": {
+        "issues": "https://github.com/druidfi/mautic-altcha-bundle/issues",
+        "source": "https://github.com/druidfi/mautic-altcha-bundle"
+    },
     "require": {
-        "php": "^8.1|^8.2",
+        "php": "^8.1|^8.2|^8.3|^8.4",
         "ext-json": "*",
         "mautic/core-lib": "^5.0|^6.0|^7.0",
         "altcha-org/altcha": "^2.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5|^11.0|^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "MauticPlugin\\MauticAltchaBundle\\": ""
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "MauticPlugin\\MauticAltchaBundle\\Tests\\": "Tests/"
+        }
     },
     "extra": {
         "install-directory-name": "MauticAltchaBundle"

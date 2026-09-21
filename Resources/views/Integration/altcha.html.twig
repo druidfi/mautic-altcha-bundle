@@ -1,5 +1,5 @@
 {#
-Varables
+Variables
   - field
   - formName (optional, string)
   - fieldPage
@@ -151,7 +151,7 @@ Varables
            "challenge", which is for an inline challenge object). #}
         {% set challengeUrl = altcha_challenge(complexity, expireSeconds) %}
 
-        <script async defer src="https://cdn.jsdelivr.net/npm/altcha@latest/dist/altcha.min.js" type="module"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/altcha@3/dist/altcha.min.js" type="module"></script>
 
         <div {% for attrName, attrValue in containerAttributes %}{{ attrName }}="{% if attrValue is iterable %}{{ attrValue|join(' ') }}{% else %}{{ attrValue }}{% endif %}"{% endfor %}>
             <div style="position: relative; top:25px; padding-bottom:25px">

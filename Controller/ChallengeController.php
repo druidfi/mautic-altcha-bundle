@@ -67,6 +67,16 @@ class ChallengeController {
      * @return JsonResponse
      */
     public function __invoke(Request $request): JsonResponse {
+        // Handle CORS preflight — the widget's fetch() call from an embedded
+        // third-party domain triggers an OPTIONS preflight before the real GET.
+        if("OPTIONS" === $request->getMethod()) {
+            $response = new JsonResponse(null, 204);
+            $response->headers->set("Access-Control-Allow-Origin", "*");
+            $response->headers->set("Access-Control-Allow-Methods", "GET, OPTIONS");
+            $response->headers->set("Access-Control-Allow-Headers", "Content-Type, Accept");
+            return $response;
+        }
+
         $complexity    = (string) $request->query->get("complexity", "medium");
         $expireSeconds = (int) $request->query->get("expire", (string) AltchaClient::DEFAULT_EXPIRE_SECONDS);
         $expireSeconds = max(self::MIN_EXPIRE_SECONDS, min(self::MAX_EXPIRE_SECONDS, $expireSeconds));

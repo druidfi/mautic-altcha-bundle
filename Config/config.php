@@ -7,13 +7,11 @@ use MauticPlugin\MauticAltchaBundle\Controller\ChallengeController;
 
 use Mautic\CoreBundle\Helper\AppVersion;
 
-// assume that Mautic developers use sane versioning
-$mauticVersion = str_replace(".", "", explode("-", (new AppVersion())->getVersion())[0]);
-
-$mauticVersion = str_split((string)$mauticVersion);
+// Extract the major version number (e.g. "7.2.0-dev" → 7)
+$mauticMajor = (int) explode(".", explode("-", (new AppVersion())->getVersion())[0])[0];
 
 switch(true) {
-    case $mauticVersion[0] >= 6:
+    case $mauticMajor >= 6:
         $defaultIntegrationArguments = [
             "event_dispatcher",
             "mautic.helper.cache_storage",
@@ -22,7 +20,7 @@ switch(true) {
             "router",
             "translator",
             "monolog.logger.mautic",
-            "mautic.helper.encryption",
+            "mautic.altcha.helper.encryption", // local alias - see Config/services.php
             "mautic.lead.model.lead",
             "mautic.lead.model.company",
             "mautic.helper.paths",
@@ -33,7 +31,7 @@ switch(true) {
             "mautic.lead.field.fields_with_unique_identifier"
         ];
         break;
-    case $mauticVersion[0] >= 5:
+    case $mauticMajor >= 5:
         $defaultIntegrationArguments = [
             "event_dispatcher",
             "mautic.helper.cache_storage",
@@ -43,7 +41,7 @@ switch(true) {
             "router",
             "translator",
             "monolog.logger.mautic",
-            "mautic.helper.encryption",
+            "mautic.altcha.helper.encryption", // local alias - see Config/services.php
             "mautic.lead.model.lead",
             "mautic.lead.model.company",
             "mautic.helper.paths",
@@ -62,7 +60,7 @@ return [
     "name"        => "ALTCHA",
     "description" => "Adds a self-hosted, privacy-friendly ALTCHA (proof-of-work) CAPTCHA field to Mautic forms.",
     "version"     => "1.0.0",
-    "author"      => "Your Name / Company",
+    "author"      => "Druid Oy",
 
     "routes" => [
         "public" => [
