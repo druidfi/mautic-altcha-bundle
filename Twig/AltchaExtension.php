@@ -45,7 +45,8 @@ class AltchaExtension extends AbstractExtension {
     /** {@inheritDoc} */
     public function getFunctions(): array {
         return [
-            new TwigFunction("altcha_challenge", [$this, "createChallenge"])
+            new TwigFunction("altcha_challenge", [$this, "createChallenge"]),
+            new TwigFunction("altcha_script_url", [$this, "getScriptUrl"]),
         ];
     }
 
@@ -59,6 +60,18 @@ class AltchaExtension extends AbstractExtension {
      */
     public function createChallenge(string $complexity = "medium", int $expireSeconds = 600): ?string {
         return $this->altchaClient->buildWidgetChallenge($complexity, $expireSeconds);
+    }
+
+    /**
+     * <h2>getScriptUrl</h2>
+     *
+     * Returns the URL to load the ALTCHA widget JS from. Uses the custom
+     * URL from integration settings when set, otherwise the jsDelivr CDN.
+     *
+     * @return string
+     */
+    public function getScriptUrl(): string {
+        return $this->altchaClient->getScriptUrl();
     }
 
 }

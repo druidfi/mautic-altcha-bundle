@@ -62,7 +62,7 @@ class AltchaType extends AbstractType {
         ])->add("auto", ChoiceType::class, [
             "label"    => "strings.altcha.settings.auto",
             "required" => false,
-            "data"     => $options["data"]["auto"] ?? "onsubmit",
+            "data"     => $options["data"]["auto"] ?? "onload",
 
             "choices" => [
                 "strings.altcha.settings.auto.option.onload"   => "onload",

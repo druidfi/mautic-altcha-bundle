@@ -18,5 +18,5 @@ return static function(ContainerConfigurator $configurator): void {
     $services->alias("mautic.altcha.helper.encryption", EncryptionHelper::class);
 
     $services->load("MauticPlugin\\MauticAltchaBundle\\", "../")
-             ->exclude(sprintf("../{%s}", implode(",", MauticCoreExtension::DEFAULT_EXCLUDES)));
+             ->exclude(sprintf("../{%s,vendor}", implode(",", MauticCoreExtension::DEFAULT_EXCLUDES)));
 };

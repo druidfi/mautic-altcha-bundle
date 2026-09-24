@@ -185,6 +185,38 @@ class AltchaClientTest extends TestCase {
         $this->assertStringContainsString("key_abc", $url);
     }
 
+    /**
+     * @test
+     */
+    public function testGetScriptUrlReturnsDefaultWhenNotSet(): void {
+        $this->assertEquals(AltchaClient::DEFAULT_SCRIPT_URL, $this->createAltchaClient()->getScriptUrl());
+    }
+
+    /**
+     * @test
+     */
+    public function testGetScriptUrlReturnsCustomUrlWhenSet(): void {
+        $custom = "https://assets.example.com/altcha.js";
+        $client = $this->createAltchaClientWithConfig([
+            "hmac_secret" => "test-hmac-secret-for-unit-tests-1234567890",
+            "script_url"  => $custom,
+        ]);
+        $this->assertEquals($custom, $client->getScriptUrl());
+    }
+
+    /**
+     * Empty script_url must fall back to the CDN default.
+     *
+     * @test
+     */
+    public function testGetScriptUrlIgnoresEmptyString(): void {
+        $client = $this->createAltchaClientWithConfig([
+            "hmac_secret" => "test-hmac-secret-for-unit-tests-1234567890",
+            "script_url"  => "",
+        ]);
+        $this->assertEquals(AltchaClient::DEFAULT_SCRIPT_URL, $client->getScriptUrl());
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------

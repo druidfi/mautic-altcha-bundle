@@ -124,7 +124,7 @@ Variables
 {% block altcha %}
     {% set complexity    = field.properties.complexity|default('medium') %}
     {% set expireSeconds = field.properties.expire|default(600) %}
-    {% set autoMode      = field.properties.auto|default('onsubmit') %}
+    {% set autoMode      = field.properties.auto|default('onload') %}
     {% set displayMode   = field.properties.display|default('standard') %}
     {% set hideFooter    = field.properties.hideFooter|default(false) %}
     {% set hideLogo      = field.properties.hideLogo|default(false) %}
@@ -151,7 +151,7 @@ Variables
            "challenge", which is for an inline challenge object). #}
         {% set challengeUrl = altcha_challenge(complexity, expireSeconds) %}
 
-        <script defer src="https://cdn.jsdelivr.net/npm/altcha@3/dist/altcha.min.js" type="module"></script>
+        <script defer src="{{ altcha_script_url()|e('html_attr') }}" type="module"></script>
 
         <div {% for attrName, attrValue in containerAttributes %}{{ attrName }}="{% if attrValue is iterable %}{{ attrValue|join(' ') }}{% else %}{{ attrValue }}{% endif %}"{% endfor %}>
             <div style="position: relative; top:25px; padding-bottom:25px">
@@ -161,7 +161,7 @@ Variables
             {% if challengeUrl is not null %}
                 <altcha-widget
                     name="altcha"
-                    challengeurl="{{ challengeUrl|e('html_attr') }}"
+                    challenge="{{ challengeUrl|e('html_attr') }}"
                     {% if 'off' != autoMode %}auto="{{ autoMode }}"{% endif %}
                     {% if 'standard' != displayMode %}display="{{ displayMode }}"{% endif %}
                     {% if hideFooter %}hidefooter{% endif %}
