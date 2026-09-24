@@ -46,7 +46,7 @@ If you fill in **both**, this plugin prefers Sentinel.
    (so the path is `plugins/MauticAltchaBundle/...`), **or** publish it as a
    Composer package and run:
    ```
-   composer require tvalimaa/mautic-altcha-bundle
+   composer require druidfi/mautic-altcha-bundle
    ```
 2. Make sure `altcha-org/altcha` (^2.0) is installed - it's declared as a
    dependency in `composer.json`, so a plain `composer install` inside your
@@ -112,9 +112,17 @@ its **Properties** tab you can set:
 |---|---|
 | **Complexity** | Low / Medium / High - how much proof-of-work the visitor's browser has to compute. Higher = more spam-resistant but slightly slower, especially on old phones. |
 | **Challenge expiry** | How long (seconds) a generated challenge stays valid. If the visitor takes longer than this to submit, they solve a new one automatically. |
-| **Start solving** | *On submit* (recommended, default) solves only when the visitor clicks Submit, so nothing is wasted on visitors who never submit. *On page load* solves immediately in the background so submission feels instant. *Off* requires a manual checkbox click. |
+| **Start solving** | *On page load* (recommended, default) solves the challenge in the background as the visitor reads the form, so submission feels instant. *On submit* solves at submit time and then auto-submits — avoid this if you want the visitor to click Submit explicitly. *Off* requires a manual checkbox click. |
 | **Floating widget** | Show the widget as a small floating badge instead of an inline box. |
 | **Hide footer / Hide ALTCHA logo** | Cosmetic toggles for the widget chrome. |
+
+### Advanced: Widget JS URL
+
+By default the widget JavaScript is loaded from the jsDelivr CDN
+(`https://cdn.jsdelivr.net/npm/altcha@3/dist/main/altcha.js`). If you need to
+serve it from your own infrastructure (strict CSP, GDPR environments, or
+offline installs), set **Widget JS URL** in the plugin settings to a
+self-hosted copy and leave blank to revert to the CDN default.
 
 The field will only appear in the builder once step 1 (HMAC secret) is done -
 this mirrors how the hCaptcha/reCAPTCHA/Turnstile fields hide themselves
@@ -136,10 +144,15 @@ until their keys are configured.
   **empty** `getRequiredKeyFields()` - that method's name is literal, and
   Mautic renders every field it lists as mandatory. Since no single field
   here is *always* needed (only "the self-hosted secret, or the full
-  Sentinel set"), all four credential fields are instead added as plain,
-  optional fields via `appendToForm()` for the "keys" tab, and
-  `isConfigured()` is overridden with the actual "one set or the other"
-  logic.
+  Sentinel set"), all credential fields are added as plain, optional fields
+  via `appendToForm()` for the "keys" tab, and `isConfigured()` is
+  overridden with the actual "one set or the other" logic. The settings form
+  also shows an active-mode badge, section dividers, a client-side "Generate
+  random secret" button, and — when Sentinel credentials are saved — a live
+  connectivity status note that probes the Sentinel endpoint and reports the
+  result. `encryptAndSetApiKeys()` is overridden to clear Mautic's form HTML
+  cache on every settings save so forms immediately pick up a new challenge
+  URL.
 - `Service/AltchaClient.php` - the only class that talks to the
   [`altcha-org/altcha`](https://github.com/altcha-org/altcha-lib-php)
   library. Self-hosted mode uses its **V1 API** (`AltchaOrg\Altcha\V1\*`,
@@ -151,11 +164,10 @@ until their keys are configured.
   method the Twig layer calls, and it always returns a URL - our own
   challenge endpoint in self-hosted mode, or Sentinel's in Sentinel mode.
 - `Resources/views/Integration/altcha.html.twig` - renders
-  `<altcha-widget challengeurl="...">`. Specifically `challengeurl`, not
-  `challenge` - the widget treats those as two different attributes (an
-  inline challenge object vs. a URL to fetch one from), and since this
-  plugin always produces a URL, `challengeurl` is the correct one
-  unconditionally.
+  `<altcha-widget challenge="...">`. In ALTCHA v3 the `challenge` attribute
+  accepts either an inline JSON object **or** a URL string — the widget
+  detects which it received automatically. The older `challengeurl` attribute
+  (v2 and earlier) is no longer used.
 
 ## Security notes
 
