@@ -69,11 +69,15 @@ class AltchaClient {
         "high"   => 400000
     ];
 
+    public const DEFAULT_SCRIPT_URL = "https://cdn.jsdelivr.net/npm/altcha@3/dist/main/altcha.js";
+
     private ?string $hmacSecret = null;
 
     private ?string $sentinelDomain = null;
     private ?string $sentinelApiKey = null;
     private ?string $sentinelApiSecret = null;
+
+    private ?string $scriptUrl = null;
 
     /**
      * <h2>AltchaClient constructor.</h2>
@@ -95,6 +99,8 @@ class AltchaClient {
             $this->sentinelDomain    = $keys["sentinel_domain"] ?? null;
             $this->sentinelApiKey    = $keys["sentinel_api_key"] ?? null;
             $this->sentinelApiSecret = $keys["sentinel_api_secret"] ?? null;
+
+            $this->scriptUrl = !empty($keys["script_url"]) ? (string) $keys["script_url"] : null;
         }
     }
 
@@ -123,6 +129,18 @@ class AltchaClient {
      */
     public function isConfigured(): bool {
         return $this->usesSentinel() || $this->hasSelfHostedSecret();
+    }
+
+    /**
+     * <h2>getScriptUrl</h2>
+     *
+     * Returns the URL to load the ALTCHA widget JavaScript from. Falls back
+     * to the jsDelivr CDN when no custom URL has been configured.
+     *
+     * @return string
+     */
+    public function getScriptUrl(): string {
+        return $this->scriptUrl ?? self::DEFAULT_SCRIPT_URL;
     }
 
     /**
