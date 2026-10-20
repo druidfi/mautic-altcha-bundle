@@ -25,6 +25,7 @@
         "php": "^8.1|^8.2|^8.3|^8.4",
         "ext-json": "*",
         "mautic/core-lib": "^5.0|^6.0|^7.0",
+        "psr/cache": "^2.0|^3.0",
         "altcha-org/altcha": "^2.0"
     },
     "require-dev": {

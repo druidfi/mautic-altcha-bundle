@@ -2,8 +2,11 @@
 
 namespace MauticPlugin\MauticAltchaBundle\Controller;
 
+use Psr\Cache\CacheItemPoolInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 use MauticPlugin\MauticAltchaBundle\Service\AltchaClient;
 
@@ -50,12 +53,23 @@ class ChallengeController {
     private const MIN_EXPIRE_SECONDS = 30;
     private const MAX_EXPIRE_SECONDS = 3600;
 
+    /** Maximum challenge requests per IP within the rate-limit window. */
+    private const RATE_LIMIT = 30;
+
+    /** Rate-limit window in seconds. */
+    private const RATE_WINDOW = 60;
+
     /**
      * <h2>ChallengeController constructor.</h2>
      *
-     * @param AltchaClient $altchaClient
+     * @param AltchaClient           $altchaClient
+     * @param CacheItemPoolInterface $cache
      */
-    public function __construct(private readonly AltchaClient $altchaClient) {
+    public function __construct(
+        private readonly AltchaClient $altchaClient,
+        #[Autowire(service: 'cache.app')]
+        private readonly CacheItemPoolInterface $cache,
+    ) {
 
     }
 
@@ -74,6 +88,15 @@ class ChallengeController {
             $response->headers->set("Access-Control-Allow-Origin", "*");
             $response->headers->set("Access-Control-Allow-Methods", "GET, OPTIONS");
             $response->headers->set("Access-Control-Allow-Headers", "Content-Type, Accept");
+            return $response;
+        }
+
+        $ip = $request->getClientIp() ?? "unknown";
+
+        if($this->isRateLimited($ip)) {
+            $response = new JsonResponse(["error" => "Too many requests."], Response::HTTP_TOO_MANY_REQUESTS);
+            $response->headers->set("Retry-After", (string) self::RATE_WINDOW);
+            $response->headers->set("Access-Control-Allow-Origin", "*");
             return $response;
         }
 
@@ -110,6 +133,32 @@ class ChallengeController {
         $response->headers->set("Access-Control-Allow-Origin", "*");
 
         return $response;
+    }
+
+    /**
+     * Fixed-window IP rate limiter backed by the app cache.
+     * Returns true when the IP has exceeded RATE_LIMIT requests within RATE_WINDOW seconds.
+     */
+    private function isRateLimited(string $ip): bool {
+        $key  = "altcha_rl_" . hash("sha256", $ip);
+        $item = $this->cache->getItem($key);
+
+        [$count, $expiresAt] = $item->isHit() ? $item->get() : [0, time() + self::RATE_WINDOW];
+
+        if(time() >= $expiresAt) {
+            $count     = 0;
+            $expiresAt = time() + self::RATE_WINDOW;
+        }
+
+        if($count >= self::RATE_LIMIT) {
+            return true;
+        }
+
+        $item->set([$count + 1, $expiresAt])
+             ->expiresAt((new \DateTimeImmutable())->setTimestamp($expiresAt));
+        $this->cache->save($item);
+
+        return false;
     }
 
 }
