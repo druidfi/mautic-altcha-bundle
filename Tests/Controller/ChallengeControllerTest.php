@@ -4,11 +4,29 @@ namespace MauticPlugin\MauticAltchaBundle\Tests\Controller;
 
 use MauticPlugin\MauticAltchaBundle\Controller\ChallengeController;
 use MauticPlugin\MauticAltchaBundle\Service\AltchaClient;
+use Psr\Cache\CacheItemInterface;
+use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use PHPUnit\Framework\TestCase;
 
 class ChallengeControllerTest extends TestCase {
+
+    /**
+     * Returns a CacheItemPoolInterface mock that never rate-limits (always reports 0 prior hits).
+     */
+    private function makePermissiveCache(): CacheItemPoolInterface {
+        $item = $this->createMock(CacheItemInterface::class);
+        $item->method("isHit")->willReturn(false);
+        $item->method("set")->willReturnSelf();
+        $item->method("expiresAt")->willReturnSelf();
+
+        $cache = $this->createMock(CacheItemPoolInterface::class);
+        $cache->method("getItem")->willReturn($item);
+        $cache->method("save")->willReturn(true);
+
+        return $cache;
+    }
 
     /**
      * OPTIONS preflight returns 204 with CORS headers and never touches AltchaClient.
@@ -20,7 +38,7 @@ class ChallengeControllerTest extends TestCase {
         $client->expects($this->never())->method("createChallengeForComplexity");
 
         $request  = new Request([], [], [], [], [], ["REQUEST_METHOD" => "OPTIONS"]);
-        $response = (new ChallengeController($client))->__invoke($request);
+        $response = (new ChallengeController($client, $this->makePermissiveCache()))->__invoke($request);
 
         $this->assertEquals(Response::HTTP_NO_CONTENT, $response->getStatusCode());
         $this->assertEquals("*", $response->headers->get("Access-Control-Allow-Origin"));
@@ -40,7 +58,7 @@ class ChallengeControllerTest extends TestCase {
             ->with("medium", AltchaClient::DEFAULT_EXPIRE_SECONDS)
             ->willReturn($this->fakeChallenge());
 
-        $response = (new ChallengeController($client))->__invoke(new Request());
+        $response = (new ChallengeController($client, $this->makePermissiveCache()))->__invoke(new Request());
 
         $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
     }
@@ -57,7 +75,7 @@ class ChallengeControllerTest extends TestCase {
             ->with("high", 300)
             ->willReturn($this->fakeChallenge());
 
-        $response = (new ChallengeController($client))->__invoke(
+        $response = (new ChallengeController($client, $this->makePermissiveCache()))->__invoke(
             new Request(["complexity" => "high", "expire" => "300"])
         );
 
@@ -73,7 +91,7 @@ class ChallengeControllerTest extends TestCase {
         $client = $this->createMock(AltchaClient::class);
         $client->method("createChallengeForComplexity")->willReturn(null);
 
-        $response = (new ChallengeController($client))->__invoke(new Request());
+        $response = (new ChallengeController($client, $this->makePermissiveCache()))->__invoke(new Request());
 
         $this->assertEquals(Response::HTTP_SERVICE_UNAVAILABLE, $response->getStatusCode());
     }
@@ -87,7 +105,7 @@ class ChallengeControllerTest extends TestCase {
         $client = $this->createMock(AltchaClient::class);
         $client->method("createChallengeForComplexity")->willReturn($this->fakeChallenge());
 
-        $response = (new ChallengeController($client))->__invoke(new Request());
+        $response = (new ChallengeController($client, $this->makePermissiveCache()))->__invoke(new Request());
 
         $this->assertEquals("*", $response->headers->get("Access-Control-Allow-Origin"));
         $this->assertStringContainsString("no-store", $response->headers->get("Cache-Control"));
@@ -118,7 +136,7 @@ class ChallengeControllerTest extends TestCase {
                     return $this->fakeChallenge();
                 });
 
-            (new ChallengeController($client))->__invoke(
+            (new ChallengeController($client, $this->makePermissiveCache()))->__invoke(
                 new Request(["expire" => $case["input"]])
             );
 
@@ -135,7 +153,7 @@ class ChallengeControllerTest extends TestCase {
         $client = $this->createMock(AltchaClient::class);
         $client->method("createChallengeForComplexity")->willReturn($this->fakeChallenge());
 
-        $response = (new ChallengeController($client))->__invoke(new Request());
+        $response = (new ChallengeController($client, $this->makePermissiveCache()))->__invoke(new Request());
         $body     = json_decode($response->getContent(), true);
 
         $this->assertIsArray($body);
