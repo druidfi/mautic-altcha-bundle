@@ -146,12 +146,30 @@ Variables
            this form's HTML may be cached by Mautic itself
            (forms.cached_html) and reused across many page views, so the
            challenge has to be fetched live, on demand, every time the
-           widget actually loads - not baked in at render time. Passed via
-           the widget's "challengeurl" attribute specifically (not
-           "challenge", which is for an inline challenge object). #}
-        {% set challengeUrl = altcha_challenge(complexity, expireSeconds) %}
+           widget actually loads - not baked in at render time.
 
-        <script defer src="{{ altcha_script_url()|e('html_attr') }}" type="module"></script>
+           altcha v3 removed the "challengeurl" attribute. The URL is now
+           passed via the "configuration" JSON attribute as {"challenge":"url"}.
+           "hidefooter" and "hidelogo" are also no longer observed attributes
+           in v3 - they moved into the configuration object as well. #}
+        {% set challengeUrl = altcha_challenge(complexity, expireSeconds) %}
+        {% set widgetConfig = {'challenge': challengeUrl} %}
+        {% if hideFooter %}{% set widgetConfig = widgetConfig|merge({'hidefooter': true}) %}{% endif %}
+        {% if hideLogo %}{% set widgetConfig = widgetConfig|merge({'hidelogo': true}) %}{% endif %}
+
+        {# Load the widget as a type=module script. Mautic's generate.js strips
+           the type attribute from <script> tags when injecting forms via DOM
+           manipulation, so we create the element programmatically instead.
+           The i18n build (altcha.i18n.js) bundles all translations and auto-
+           detects the page language via document.documentElement.lang. #}
+        <script>
+        (function(){
+            var s=document.createElement('script');
+            s.type='module';
+            s.src={{ altcha_script_url()|json_encode|raw }};
+            document.head.appendChild(s);
+        })();
+        </script>
 
         <div {% for attrName, attrValue in containerAttributes %}{{ attrName }}="{% if attrValue is iterable %}{{ attrValue|join(' ') }}{% else %}{{ attrValue }}{% endif %}"{% endfor %}>
             <div style="position: relative; top:25px; padding-bottom:25px">
@@ -161,11 +179,9 @@ Variables
             {% if challengeUrl is not null %}
                 <altcha-widget
                     name="altcha"
-                    challenge="{{ challengeUrl|e('html_attr') }}"
+                    configuration="{{ widgetConfig|json_encode|e('html_attr') }}"
                     {% if 'off' != autoMode %}auto="{{ autoMode }}"{% endif %}
                     {% if 'standard' != displayMode %}display="{{ displayMode }}"{% endif %}
-                    {% if hideFooter %}hidefooter{% endif %}
-                    {% if hideLogo %}hidelogo{% endif %}
                 ></altcha-widget>
             {% else %}
                 <div style="padding: 10px; background: #fdecea; border: 1px solid #f5c2c0; color: #611a15;">
