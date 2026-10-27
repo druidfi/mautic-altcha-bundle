@@ -69,7 +69,7 @@ class AltchaClient {
         "high"   => 400000
     ];
 
-    public const DEFAULT_SCRIPT_URL = "https://cdn.jsdelivr.net/npm/altcha@3/dist/main/altcha.js";
+    public const DEFAULT_SCRIPT_URL = "https://cdn.jsdelivr.net/npm/altcha@3/dist/main/altcha.i18n.js";
 
     private ?string $hmacSecret = null;
 
